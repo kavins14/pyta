@@ -30,11 +30,35 @@ def test_simple_class() -> None:
     keys = list(cfgs)
 
     expected_blocks = [
-        ['x = 0', '\n\nclass A(CFGVisitor):\n    pass\n', 'print(x)'],
+        ['x = 0', 'pass', 'print(x)'],
         []
     ]
     assert expected_blocks == _extract_blocks(cfgs[keys[0]])
 
+
+def test_compound_statement_in_class() -> None:
+    src = """
+    x = 0
+    class A(CFGVisitor):
+        if x > 5:
+            print(x)
+        else:
+            print(y)
+    print(z)
+    """
+    cfgs = build_cfgs(src)
+    assert len(cfgs) == 1
+
+    keys = list(cfgs)
+
+    expected_blocks = [
+        ['x = 0', 'x > 5'],
+        ['print(x)'],
+        ['print(z)'],
+        [],
+        ['print(y)']
+    ]
+    assert expected_blocks == _extract_blocks(cfgs[keys[0]])
 
 def test_class_with_one_method() -> None:
     src = """
@@ -53,9 +77,8 @@ def test_class_with_one_method() -> None:
     keys = list(cfgs)
 
     expected_blocks_module = [
-        ['\n\nclass A(CFGVisitor):\n    """This is a class docstring"""\n    '
-         'c: int\n    d: str\n    \n    def __init__(self)->None:\n        '
-         'self.c = 10\n        self.d = \'string\'\n'],
+        ['c: int', 'd: str', '\ndef __init__(self)->None:\n    '
+         'self.c = 10\n    self.d = \'string\''],
         []
     ]
     assert expected_blocks_module == _extract_blocks(cfgs[keys[0]])
@@ -88,10 +111,9 @@ def test_class_with_multiple_method() -> None:
     keys = list(cfgs)
 
     expected_blocks_module = [
-        ['\n\nclass A(CFGVisitor):\n    """This is a class docstring"""\n    '
-         'c: int\n    d: str\n    \n    def __init__(self)->None:\n        '
-         'self.c = 10\n        self.d = \'string\'\n    \n    '
-         'def runner(self)->str:\n        return \'run\'\n'],
+        ['c: int', 'd: str', '\ndef __init__(self)->None:\n    '
+         'self.c = 10\n    self.d = \'string\'', '\ndef runner(self)->str:\n    '
+         'return \'run\''],
         []
     ]
     assert expected_blocks_module == _extract_blocks(cfgs[keys[0]])
